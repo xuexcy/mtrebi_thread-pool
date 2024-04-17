@@ -3,13 +3,13 @@
 
 #include "../include/ThreadPool.h"
 
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_int_distribution<int> dist(-1000, 1000);
+std::random_device rd;  // 用于产生一个随机数种子(真随机)
+std::mt19937 mt(rd());  // 用于产生随机数(高性能伪随机)
+std::uniform_int_distribution<int> dist(-1000, 1000);  // 均匀分布
 auto rnd = std::bind(dist, mt);
 
 
-void simulate_hard_computation() {
+void simulate_hard_computation() {  // 随机sleep 1000 ~ 3000 ms
   std::this_thread::sleep_for(std::chrono::milliseconds(2000 + rnd()));
 }
 
@@ -53,19 +53,19 @@ int main(int argc, char *argv[])
 
   // Submit function with output parameter passed by ref
   int output_ref;
-  auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);
+  auto future1 = pool.submit(multiply_output, std::ref(output_ref), 5, 6);  // std::ref(output_ref)
 
   // Wait for multiplication output to finish
   future1.get();
   std::cout << "Last operation result is equals to " << output_ref << std::endl;
 
-  // Submit function with return parameter 
+  // Submit function with return parameter
   auto future2 = pool.submit(multiply_return, 5, 3);
 
   // Wait for multiplication output to finish
   int res = future2.get();
   std::cout << "Last operation result is equals to " << res << std::endl;
-  
+
   pool.shutdown();
 
   return 0;

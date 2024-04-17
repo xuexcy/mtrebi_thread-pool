@@ -1,24 +1,24 @@
 # Table of Contents
-&nbsp;[Introduction](https://github.com/mtrebi/thread-pool/blob/master/README.md#introduction)  <br/> 
-&nbsp;[Build instructions](https://github.com/mtrebi/thread-pool/blob/master/README.md#build-instructions)  <br/> 
-&nbsp;[Thread pool](https://github.com/mtrebi/thread-pool/blob/master/README.md#thread-pool)<br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Queue](https://github.com/mtrebi/thread-pool/blob/master/README.md#queue)<br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Submit function](https://github.com/mtrebi/thread-pool/blob/master/README.md#submit-function)  <br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Thread worker](https://github.com/mtrebi/thread-pool/blob/master/README.md#thread-worker)  <br/> 
-&nbsp;[Usage example](https://github.com/mtrebi/thread-pool/blob/master/README.md#usage-example)  <br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#1](https://github.com/mtrebi/thread-pool#use-case-1)  <br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#2](https://github.com/mtrebi/thread-pool#use-case-2)  <br/> 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#3](https://github.com/mtrebi/thread-pool#use-case-3)  <br/> 
-&nbsp;[Future work](https://github.com/mtrebi/thread-pool/blob/master/README.md#future-work)  <br/> 
-&nbsp;[References](https://github.com/mtrebi/thread-pool/blob/master/README.md#references)  <br/> 
+&nbsp;[Introduction](https://github.com/mtrebi/thread-pool/blob/master/README.md#introduction)  <br/>
+&nbsp;[Build instructions](https://github.com/mtrebi/thread-pool/blob/master/README.md#build-instructions)  <br/>
+&nbsp;[Thread pool](https://github.com/mtrebi/thread-pool/blob/master/README.md#thread-pool)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Queue](https://github.com/mtrebi/thread-pool/blob/master/README.md#queue)<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Submit function](https://github.com/mtrebi/thread-pool/blob/master/README.md#submit-function)  <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Thread worker](https://github.com/mtrebi/thread-pool/blob/master/README.md#thread-worker)  <br/>
+&nbsp;[Usage example](https://github.com/mtrebi/thread-pool/blob/master/README.md#usage-example)  <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#1](https://github.com/mtrebi/thread-pool#use-case-1)  <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#2](https://github.com/mtrebi/thread-pool#use-case-2)  <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Use case#3](https://github.com/mtrebi/thread-pool#use-case-3)  <br/>
+&nbsp;[Future work](https://github.com/mtrebi/thread-pool/blob/master/README.md#future-work)  <br/>
+&nbsp;[References](https://github.com/mtrebi/thread-pool/blob/master/README.md#references)  <br/>
 
 # Introduction:
 
 A [thread pool](https://en.wikipedia.org/wiki/Thread_pool) is a technique that allows developers to exploit the concurrency of modern processors in an **easy** and **efficient** manner. It's easy because you send "work" to the pool and somehow this work gets done without blocking the main thread. It's efficient because threads are not initialized each time we want the work to be done. Threads are initialized once and remain inactive until some work has to be done. This way we minimize the overhead.
 
-There are many more Thread pool implementations in C++, many of them are probably better (safer, faster...) than mine. However,I believe my implementation are **very straightforward and easy to understand**. 
+There are many more Thread pool implementations in C++, many of them are probably better (safer, faster...) than mine. However,I believe my implementation are **very straightforward and easy to understand**.
 
-__Disclaimer: Please Do not use this project in a professional environment. It may contain bugs and/or not work as expected.__ I did this project to learn how C++11 Threads work and provide an easy way for other people to understand it too. 
+__Disclaimer: Please Do not use this project in a professional environment. It may contain bugs and/or not work as expected.__ I did this project to learn how C++11 Threads work and provide an easy way for other people to understand it too.
 
 # Build instructions:
 
@@ -45,7 +45,7 @@ cmake ..
 make
 ```
 
-# Thread pool 
+# Thread pool
 
 The way that I understand things better is with images. So, let's take a look at the image of thread pool given by Wikipedia:
 
@@ -68,7 +68,7 @@ void enqueue(T& t) {
 	m_queue.push(t);
 }
 
-``` 
+```
 To enqueue the first thing we do is lock the mutex to make sure that no one else is accessing the resource. Then, we push the element to the queue. When the lock goes out of scopes it gets automatically released. Easy, huh? This way, we make the Queue thread-safe and thus we don't have to worry many threads accessing and/or modifying it at the same "time".
 
 ## Submit function
@@ -79,7 +79,7 @@ The most important method of the thread pool is the one responsible of adding wo
 
 Cool, let's see **how** we can implement it.
 
-### Submit implementation 
+### Submit implementation
 
 The complete submit functions looks like this:
 
@@ -89,12 +89,12 @@ template<typename F, typename...Args>
 auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
 	// Create a function with bounded parameters ready to execute
 	std::function<decltype(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-	// Encapsulate it into a shared ptr in order to be able to copy construct / assign 
+	// Encapsulate it into a shared ptr in order to be able to copy construct / assign
 	auto task_ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(func);
 
 	// Wrap packaged task into void function
 	std::function<void()> wrapper_func = [task_ptr]() {
-	  (*task_ptr)(); 
+	  (*task_ptr)();
 	};
 
 	// Enqueue generic wrapper function
@@ -108,13 +108,13 @@ auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
 }
 ```
 
-Nevertheless, we're going to inspect line by line what's going on in order to fully understand how it works. 
+Nevertheless, we're going to inspect line by line what's going on in order to fully understand how it works.
 
 #### Variadic template function
 
 ```c
 template<typename F, typename...Args>
-``` 
+```
 
 This means that the next statement is templated. The first template parameter is called F (our function) and second one is a parameter pack. A parameter pack is a special template parameter that can accept zero or more template arguments. It is, in fact, a way to express a variable number of arguments in a template. A template with at least one parameter pack is called **variadic template**
 
@@ -124,13 +124,17 @@ Summarizing, we are telling the compiler that our submit function is going to ta
 
 ```c
 auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
-``` 
+```
+```c
+// 其实可以用 std::invoke_result_t
+std::future<std::invoke_result<F, Args...>> submit(F&& f, Args&&... args);
+```
 
 This may seem weird but, it's not. A function, in fact, can be declared using two different syntaxes. The following is the most well known:
 
 ```c
 return-type identifier ( argument-declarations... )
-``` 
+```
 
 But, we can also declare the function like this:
 
@@ -138,9 +142,9 @@ But, we can also declare the function like this:
 auto identifier ( argument-declarations... ) -> return_type
  ```
 
-Why two syntaxes? Well, imagine that you have a function that has a return type that depends on the input parameters of the function. Using the first syntax you can't declare that function without getting a compiler error since you  would be using a variable in the return type that has not been declared yet (because the return type declaration goes before the parameters type declaration). 
+Why two syntaxes? Well, imagine that you have a function that has a return type that depends on the input parameters of the function. Using the first syntax you can't declare that function without getting a compiler error since you  would be using a variable in the return type that has not been declared yet (because the return type declaration goes before the parameters type declaration).
 
-Using the second syntax you can declare the function to have return type **auto** then, using the -> you can declare the return type depending on the arguments of the functions that have been declared previously. 
+Using the second syntax you can declare the function to have return type **auto** then, using the -> you can declare the return type depending on the arguments of the functions that have been declared previously.
 
 Now, let's inspect the parameters of the submit function. When the type of a parameter is declared as **T&&** for some deducted type T that parameter is a **universal reference**. This term was coined by [Scott Meyers](https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers) because **T&&** can also mean r-value reference. However, in the context of type deduction, it means that it can be bound to both l-values and r-values, unlike l-value references that can only be bound to non-const objects (they bind only to modifiable lvalues) and r-value references (they bind only to rvalues).
 
@@ -154,14 +158,14 @@ Finally, the template type of std::future is **decltype(f(args...))**. Decltype 
 ```c
 // Create a function with bounded parameters ready to execute
 std::function<decltype(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-``` 
+```
 
 There are many many things happening here. First of all, the **std::bind(F, Args)** is a function that creates a wrapper for F with the given Args. Caling this wrapper is the same as calling F with the Args that it has been bound. Here, we are simply calling bind with our generic function _f_ and the parameter pack _args_ but using another wrapper **std::forward<T>(t)** for each parameter. This second wrapper is needed to achieve perfect forwarding of universal references.
 The result of this bind call is a **std::function<T>**. The std::function<T> is a C++ object that encapsulates a function. It allows you to execute the function as if it were a normal function calling the operator() with the required parameters BUT, because it is an object, you can store it, copy it and move it around. The template type of any std::function is the signature of that function: std::function< return-type (arguments)>. In this case, we already know how to get the return type of this function using decltype. But, what about the arguments? Well, because we bound all arguments _args_ to the function _f_ we just have to add an empty pair of parenthesis that represents an empty list of arguments: **decltype(f(args...))()**.
 
 
 ```c
-// Encapsulate it into a shared ptr in order to be able to copy construct / assign 
+// Encapsulate it into a shared ptr in order to be able to copy construct / assign
 auto task_ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(func);
 ```
 
@@ -170,7 +174,7 @@ The next thing we do is we create a **std::packaged_task<T>(t)**.  A packaged_ta
 ```c
 // Wrap packaged task into void function
 std::function<void()> wrapperfunc = [task_ptr]() {
-  (*task_ptr)(); 
+  (*task_ptr)();
 };
 
 ```
@@ -182,7 +186,7 @@ Again, we create a std:.function, but, note that this time its template type is 
 m_queue.enqueue(wrapperfunc);
 ```
 
-We enqueue this _wrapperfunc_. 
+We enqueue this _wrapperfunc_.
 
 ```c
 // Wake up one thread if its waiting
@@ -208,7 +212,7 @@ Now that we understand how the submit method works, we're going to focus on how 
 			Dequeue work
 			Do it
 
-This looks alright but it's **not very efficient**. Do you see why? What would happen if there is no work in the Queue? The threads would keep looping and asking all the time: Is the queue empty? 
+This looks alright but it's **not very efficient**. Do you see why? What would happen if there is no work in the Queue? The threads would keep looping and asking all the time: Is the queue empty?
 
 The more sensible implementation is done by "sleeping" the threads until some work is added to the queue. As we saw before, as soon as we enqueue work, a signal **notify_one()** is sent. This allows us to implement a more efficient algorithm:
 
@@ -218,7 +222,7 @@ The more sensible implementation is done by "sleeping" the threads until some wo
 		Dequeue work
 		Do it
 
-This signal system is implemented in C++ with **conditional variables**. Conditional variables are always bound to a mutex, so I added a mutex to the thread pool class just to manage this. The final code of a worker looks like this: 
+This signal system is implemented in C++ with **conditional variables**. Conditional variables are always bound to a mutex, so I added a mutex to the thread pool class just to manage this. The final code of a worker looks like this:
 
 ```c
 void operator()() {
@@ -235,7 +239,7 @@ void operator()() {
 		if (dequeued) {
 	  		func();
 		}
-	}	
+	}
 }
 
 ```
@@ -244,7 +248,7 @@ The code is really easy to understand so I am not going to explain anything. The
 
 ```c
 std::function<void()> wrapperfunc = [task_ptr]() {
-  (*task_ptr)(); 
+  (*task_ptr)();
 };
 
 ```
@@ -367,7 +371,7 @@ Checkout the [main](https://github.com/mtrebi/thread-pool/blob/master/src/main.c
 * Make it more reliable and safer (exceptions)
 * Find a better way to use it with member functions (thanks to @rajenk)
 * Run benchmarks and improve performance if needed
- * Evaluate performance and impact of std::function in the heap and try alternatives if necessary. (thanks to @JensMunkHansen) 
+ * Evaluate performance and impact of std::function in the heap and try alternatives if necessary. (thanks to @JensMunkHansen)
 
 # References
 
